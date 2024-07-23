@@ -41,9 +41,4 @@ public class BotMovement : MonoBehaviour
         transform.LookAt(target);
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
     }
-
-    internal void SetTarget(Vector3 position)
-    {
-        throw new NotImplementedException();
-    }
 }

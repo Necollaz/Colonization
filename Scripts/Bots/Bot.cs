@@ -1,4 +1,4 @@
-using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(BotMovement), typeof(BotPicker))]
@@ -10,6 +10,7 @@ public class Bot : MonoBehaviour
     private BotMovement _botMovement;
     private BotPicker _botPicker;
     private Resource _resource;
+    private Transform _flagTarget;
 
     public bool IsBusy { get; private set; }
 
@@ -28,6 +29,17 @@ public class Bot : MonoBehaviour
             _resource = resource;
             _botMovement.SetTarget(resource.transform);
             _botMovement.OnReachTarget += PickUpResource;
+        }
+    }
+
+    public void SetFlagTarget(Transform flagTransform)
+    {
+        if(!IsBusy && flagTransform != null)
+        {
+            IsBusy = true;
+            _flagTarget = flagTransform;
+            _botMovement.SetTarget(flagTransform);
+            _botMovement.OnReachTarget += ArriveAtFlag;
         }
     }
 
@@ -56,5 +68,15 @@ public class Bot : MonoBehaviour
             _botMovement.OnReachTarget -= ReturnBase;
             _base.TryAssign(this);
         }
+    }
+
+    private void ArriveAtFlag()
+    {
+        _botMovement.OnReachTarget -= ArriveAtFlag;
+        Base newBase = Instantiate(_base, _flagTarget.position, Quaternion.identity);
+        newBase.FlagInstance = null;
+        newBase.TryAssign(this);
+        IsBusy = false;
+        _base = newBase;
     }
 }

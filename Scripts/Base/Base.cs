@@ -13,11 +13,12 @@ public class Base : MonoBehaviour
     private ResourceScanner _scanner;
     private Dictionary<ResourceType, int> _resources;
     private HashSet<Resource> _reservedResources;
-    private Flag _flag;
+    private int _resourceCollectedForNewBase = 0;
+    private int _resourcesRequired = 5;
 
     public event Action OnResourceChanged;
 
-    public Flag FlagInstance { get => _flag; set { _flag = value; }}
+    public Flag FlagInstance { get; set; }
 
     private void Awake()
     {
@@ -25,6 +26,11 @@ public class Base : MonoBehaviour
         _reservedResources = new HashSet<Resource>();
         _scanner = GetComponent<ResourceScanner>();
         _scanner.ResourceFound += Found;
+    }
+
+    public ResourceType GetResourceType()
+    {
+        return _resourceType;
     }
 
     public Dictionary<ResourceType, int> GetResources() => new Dictionary<ResourceType, int>(_resources);
@@ -37,7 +43,16 @@ public class Base : MonoBehaviour
             _resources[resourceType] = amount;
 
         OnResourceChanged?.Invoke();
-        TryCreateBot();
+
+        if (FlagInstance != null)
+        {
+            _resourceCollectedForNewBase += amount;
+            TrySendBot();
+        }
+        else
+        {
+            TryCreateBot();
+        }
     }
 
     public void ReleaseResource(Resource resource)
@@ -88,5 +103,22 @@ public class Base : MonoBehaviour
 
         Bot newBot = _botFactory.CreateBot(transform);
         _bots.Add(newBot);
+    }
+
+    private void TrySendBot()
+    {
+        if(_resourceCollectedForNewBase >= _resourcesRequired)
+        {
+            foreach (var bot in _bots)
+            {
+                if (!bot.IsBusy)
+                {
+                    bot.SetFlagTarget(FlagInstance.transform);
+                    _resourceCollectedForNewBase = 0;
+                    FlagInstance = null;
+                    return;
+                }
+            }
+        }
     }
 }
