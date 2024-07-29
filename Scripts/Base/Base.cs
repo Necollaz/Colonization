@@ -12,25 +12,24 @@ public class Base : MonoBehaviour
 
     private ResourceScanner _scanner;
     private Dictionary<ResourceType, int> _resources;
-    private HashSet<Resource> _reservedResources;
+    private static ResourceReservation _resourceReservation;
+
     private int _resourceCollectedForNewBase = 0;
     private int _resourcesRequired = 5;
 
     public event Action OnResourceChanged;
 
     public Flag FlagInstance { get; set; }
-
     private void Awake()
     {
+        if (_resourceReservation == null)
+        {
+            _resourceReservation = new ResourceReservation();
+        }
+
         _resources = new Dictionary<ResourceType, int>();
-        _reservedResources = new HashSet<Resource>();
         _scanner = GetComponent<ResourceScanner>();
         _scanner.ResourceFound += Found;
-    }
-
-    public ResourceType GetResourceType()
-    {
-        return _resourceType;
     }
 
     public Dictionary<ResourceType, int> GetResources() => new Dictionary<ResourceType, int>(_resources);
@@ -47,7 +46,11 @@ public class Base : MonoBehaviour
         if (FlagInstance != null)
         {
             _resourceCollectedForNewBase += amount;
-            TrySendBot();
+
+            if(_resourceCollectedForNewBase >= _resourcesRequired)
+            {
+                TrySendBot();
+            }
         }
         else
         {
@@ -57,14 +60,14 @@ public class Base : MonoBehaviour
 
     public void ReleaseResource(Resource resource)
     {
-        _reservedResources.Remove(resource);
+        _resourceReservation.Release(resource);
     }
 
     public void TryAssign(Bot bot)
     {
         foreach (var resource in _scanner.GetAvailableResources())
         {
-            if (!_reservedResources.Contains(resource))
+            if (!_resourceReservation.IsReserved(resource))
             {
                 Assign(bot, resource);
                 break;  
@@ -72,25 +75,24 @@ public class Base : MonoBehaviour
         }
     }
 
-    private void Found(Resource resource)
-    {
-        if (_reservedResources.Contains(resource)) return;
-
-        foreach (var bot in _bots)
-        {
-            if (!bot.IsBusy)
-            {
-                bot.SetTarget(resource);
-                _reservedResources.Add(resource);
-                break;
-            }
-        }
-    }
-
     private void Assign(Bot bot, Resource resource)
     {
         bot.SetTarget(resource);
-        _reservedResources.Add(resource);
+        _resourceReservation.Reserve(resource);
+    }
+
+    private void Found(Resource resource)
+    {
+        if (_resourceReservation.IsReserved(resource)) return;
+
+        foreach (var bot in _bots)
+        {
+            if (!bot.IsBusy && !_resourceReservation.IsReserved(resource))
+            {
+                Assign(bot, resource);
+                break;
+            }
+        }
     }
 
     private void TryCreateBot()
@@ -107,7 +109,7 @@ public class Base : MonoBehaviour
 
     private void TrySendBot()
     {
-        if(_resourceCollectedForNewBase >= _resourcesRequired)
+        if(_resourceCollectedForNewBase >= _resourcesRequired && FlagInstance != null)
         {
             foreach (var bot in _bots)
             {

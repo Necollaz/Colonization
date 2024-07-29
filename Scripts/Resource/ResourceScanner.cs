@@ -14,6 +14,8 @@ public class ResourceScanner : MonoBehaviour
 
     public event Action<Resource> ResourceFound;
 
+    public ParticleSystem ParticleEffect { get => _particleEffect; set => _particleEffect = value; }
+
     private void Start()
     {
         StartCoroutine(Scan());

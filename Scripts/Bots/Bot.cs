@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(BotMovement), typeof(BotPicker))]
@@ -34,13 +33,21 @@ public class Bot : MonoBehaviour
 
     public void SetFlagTarget(Transform flagTransform)
     {
-        if(!IsBusy && flagTransform != null)
+        if(flagTransform != null)
         {
+            StopCurrentTask();
             IsBusy = true;
             _flagTarget = flagTransform;
             _botMovement.SetTarget(flagTransform);
-            _botMovement.OnReachTarget += ArriveAtFlag;
+            _botMovement.OnReachTarget += CreateNewBase;
         }
+    }
+
+    private void StopCurrentTask()
+    {
+        _botMovement.Stop();
+        _botMovement.OnReachTarget -= ReturnBase;
+        _botMovement.OnReachTarget -= CreateNewBase;
     }
 
     private void PickUpResource()
@@ -70,10 +77,22 @@ public class Bot : MonoBehaviour
         }
     }
 
-    private void ArriveAtFlag()
+    private void CreateNewBase()
     {
-        _botMovement.OnReachTarget -= ArriveAtFlag;
+        _botMovement.OnReachTarget -= CreateNewBase;
         Base newBase = Instantiate(_base, _flagTarget.position, Quaternion.identity);
+
+        if(newBase.TryGetComponent(out ResourceScanner scanner))
+        {
+            if(_base.TryGetComponent(out ResourceScanner currentScanner))
+            {
+                scanner.ParticleEffect = currentScanner.ParticleEffect;
+                scanner.ParticleEffect.transform.SetParent(newBase.transform);
+                scanner.ParticleEffect.transform.localPosition = Vector3.zero;
+            }
+        }
+
+        _flagTarget.gameObject.SetActive(false);
         newBase.FlagInstance = null;
         newBase.TryAssign(this);
         IsBusy = false;
