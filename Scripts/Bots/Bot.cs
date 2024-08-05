@@ -10,6 +10,7 @@ public class Bot : MonoBehaviour
     private BotPicker _botPicker;
     private Resource _resource;
     private Transform _flagTarget;
+    private float _pickupRange = 0.1f;
 
     public bool IsBusy { get; private set; }
 
@@ -17,7 +18,12 @@ public class Bot : MonoBehaviour
     {
         _botMovement = GetComponent<BotMovement>();
         _botPicker = GetComponent<BotPicker>();
-        _botPicker.Discovered += SetTarget;
+        _botPicker.ResourcePicked += SetTarget;
+    }
+
+    private void OnDestroy()
+    {
+        _botPicker.ResourcePicked -= SetTarget;
     }
 
     public void SetTarget(Resource resource)
@@ -27,7 +33,7 @@ public class Bot : MonoBehaviour
             IsBusy = true;
             _resource = resource;
             _botMovement.SetTarget(resource.transform);
-            _botMovement.OnReachTarget += PickUpResource;
+            _botMovement.TargetReached += PickUpResource;
         }
     }
 
@@ -39,26 +45,26 @@ public class Bot : MonoBehaviour
             IsBusy = true;
             _flagTarget = flagTransform;
             _botMovement.SetTarget(flagTransform);
-            _botMovement.OnReachTarget += CreateNewBase;
+            _botMovement.TargetReached += CreateNewBase;
         }
     }
 
     private void StopCurrentTask()
     {
         _botMovement.Stop();
-        _botMovement.OnReachTarget -= ReturnBase;
-        _botMovement.OnReachTarget -= CreateNewBase;
+        _botMovement.TargetReached -= ReturnBase;
+        _botMovement.TargetReached -= CreateNewBase;
     }
 
     private void PickUpResource()
     {
-        if (_resource != null && Vector3.Distance(transform.position, _resource.transform.position) < 0.1f)
+        if (_resource != null && Vector3.Distance(transform.position, _resource.transform.position) < _pickupRange)
         {
             _resource.transform.SetParent(transform);
             _resource.transform.localPosition = Vector3.zero;
-            _botMovement.OnReachTarget -= PickUpResource;
+            _botMovement.TargetReached -= PickUpResource;
             _botMovement.SetTarget(_base.transform);
-            _botMovement.OnReachTarget += ReturnBase;
+            _botMovement.TargetReached += ReturnBase;
         }
     }
 
@@ -67,29 +73,24 @@ public class Bot : MonoBehaviour
         if (_resource != null)
         {
             _resource.transform.SetParent(null);
-            _base.Add(_resource.GetResourceType(), _resource.GetAmount());
+            _base.Add(_resource.GetAmount());
             IsBusy = false;
             _base.ReleaseResource(_resource);
             _resourcePool.Return(_resource);
             _resource.gameObject.SetActive(false);
-            _botMovement.OnReachTarget -= ReturnBase;
+            _botMovement.TargetReached -= ReturnBase;
             _base.TryAssign(this);
         }
     }
 
     private void CreateNewBase()
     {
-        _botMovement.OnReachTarget -= CreateNewBase;
+        _botMovement.TargetReached -= CreateNewBase;
         Base newBase = Instantiate(_base, _flagTarget.position, Quaternion.identity);
 
-        if(newBase.TryGetComponent(out ResourceScanner scanner))
+        if(newBase.TryGetComponent(out ResourceScanner scanner) && _base.TryGetComponent(out ResourceScanner currentScanner))
         {
-            if(_base.TryGetComponent(out ResourceScanner currentScanner))
-            {
-                scanner.ParticleEffect = currentScanner.ParticleEffect;
-                scanner.ParticleEffect.transform.SetParent(newBase.transform);
-                scanner.ParticleEffect.transform.localPosition = Vector3.zero;
-            }
+            scanner.CopySettings(currentScanner);
         }
 
         _flagTarget.gameObject.SetActive(false);

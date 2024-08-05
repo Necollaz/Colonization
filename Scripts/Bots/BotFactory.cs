@@ -6,7 +6,6 @@ public class BotFactory : MonoBehaviour
 
     public Bot CreateBot(Transform spawnPoint)
     {
-        Bot newBot = Instantiate(_botPrefab, spawnPoint.position, spawnPoint.rotation);
-        return newBot;
+        return Instantiate(_botPrefab, spawnPoint.position, spawnPoint.rotation);
     }
 }

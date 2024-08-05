@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 537646752903316138}
   - component: {fileID: -589429812947835901}
   - component: {fileID: 6585293769042357390}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wood
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -169,7 +169,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85108b035ee2b4940a48c750a45d16c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _resourceType: {fileID: 11400000, guid: b4f6bcba040db4caf857538f33d3bd17, type: 2}
-  _minAmount: 1
-  _maxAmount: 10
-  IsCollected: 0
+  _amount: 1

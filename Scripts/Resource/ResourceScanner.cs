@@ -1,37 +1,31 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class ResourceScanner : MonoBehaviour
 {
+    [SerializeField] private ParticleSystem _particleEffect;
+    [SerializeField] private LayerMask _resourceLayerMask;
     [SerializeField] private float _scanRadius;
     [SerializeField] private float _delay;
-    [SerializeField] private ParticleSystem _particleEffect;
 
-    private HashSet<Resource> _detectedResources = new HashSet<Resource>();
+    public ParticleSystem ParticleEffect;
 
     public event Action<Resource> ResourceFound;
-
-    public ParticleSystem ParticleEffect { get => _particleEffect; set => _particleEffect = value; }
 
     private void Start()
     {
         StartCoroutine(Scan());
     }
 
-    public IEnumerable<Resource> GetAvailableResources()
+    public void CopySettings(ResourceScanner other)
     {
-        return _detectedResources.Where(r => r != null && r.gameObject.activeSelf);
-    }
-
-    public void RemoveResource(Resource resource)
-    {
-        if (_detectedResources.Contains(resource))
-        {
-            _detectedResources.Remove(resource);
-        }
+        _particleEffect = other._particleEffect;
+        _particleEffect.transform.SetParent(transform);
+        _particleEffect.transform.localPosition = Vector3.zero;
+        _resourceLayerMask = other._resourceLayerMask;
+        _scanRadius = other._scanRadius;
+        _delay = other._delay;
     }
 
     private IEnumerator Scan()
@@ -40,13 +34,12 @@ public class ResourceScanner : MonoBehaviour
 
         while (true)
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position, _scanRadius);
+            Collider[] hits = Physics.OverlapSphere(transform.position, _scanRadius, _resourceLayerMask);
 
             foreach (Collider hit in hits)
             {
-                if(hit.TryGetComponent(out Resource resource) && !_detectedResources.Contains(resource))
+                if(hit.TryGetComponent(out Resource resource))
                 {
-                    _detectedResources.Add(resource);
                     ResourceFound?.Invoke(resource);
                     _particleEffect.Play();
                 }

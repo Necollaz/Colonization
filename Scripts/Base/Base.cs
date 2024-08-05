@@ -7,47 +7,34 @@ public class Base : MonoBehaviour
 {
     [SerializeField] private List<Bot> _bots;
     [SerializeField] private BotFactory _botFactory;
-    [SerializeField] private ResourceType _resourceType;
     [SerializeField] private int _resourceCost = 3;
 
     private ResourceScanner _scanner;
-    private Dictionary<ResourceType, int> _resources;
-    private static ResourceReservation _resourceReservation;
-
-    private int _resourceCollectedForNewBase = 0;
+    private int _resources = 0;
     private int _resourcesRequired = 5;
+    private HashSet<Resource> _reservedResources = new HashSet<Resource>();
 
-    public event Action OnResourceChanged;
+    public event Action ResourceChanged;
 
     public Flag FlagInstance { get; set; }
+
     private void Awake()
     {
-        if (_resourceReservation == null)
-        {
-            _resourceReservation = new ResourceReservation();
-        }
-
-        _resources = new Dictionary<ResourceType, int>();
         _scanner = GetComponent<ResourceScanner>();
         _scanner.ResourceFound += Found;
     }
 
-    public Dictionary<ResourceType, int> GetResources() => new Dictionary<ResourceType, int>(_resources);
+    public int GetResources() => _resources;
 
-    public void Add(ResourceType resourceType, int amount)
+    public void Add(int amount)
     {
-        if (_resources.ContainsKey(resourceType))
-            _resources[resourceType] += amount;
-        else
-            _resources[resourceType] = amount;
+        _resources += amount;
 
-        OnResourceChanged?.Invoke();
+        ResourceChanged?.Invoke();
 
         if (FlagInstance != null)
         {
-            _resourceCollectedForNewBase += amount;
-
-            if(_resourceCollectedForNewBase >= _resourcesRequired)
+            if(_resources >= _resourcesRequired)
             {
                 TrySendBot();
             }
@@ -60,14 +47,14 @@ public class Base : MonoBehaviour
 
     public void ReleaseResource(Resource resource)
     {
-        _resourceReservation.Release(resource);
+        _reservedResources.Remove(resource);
     }
 
     public void TryAssign(Bot bot)
     {
-        foreach (var resource in _scanner.GetAvailableResources())
+        foreach (Resource resource in _reservedResources)
         {
-            if (!_resourceReservation.IsReserved(resource))
+            if (!_reservedResources.Contains(resource))
             {
                 Assign(bot, resource);
                 break;  
@@ -78,16 +65,16 @@ public class Base : MonoBehaviour
     private void Assign(Bot bot, Resource resource)
     {
         bot.SetTarget(resource);
-        _resourceReservation.Reserve(resource);
+        _reservedResources.Add(resource);
     }
 
     private void Found(Resource resource)
     {
-        if (_resourceReservation.IsReserved(resource)) return;
+        if (_reservedResources.Contains(resource)) return;
 
-        foreach (var bot in _bots)
+        foreach (Bot bot in _bots)
         {
-            if (!bot.IsBusy && !_resourceReservation.IsReserved(resource))
+            if (!bot.IsBusy)
             {
                 Assign(bot, resource);
                 break;
@@ -97,11 +84,10 @@ public class Base : MonoBehaviour
 
     private void TryCreateBot()
     {
-        if (!_resources.ContainsKey(_resourceType) || _resources[_resourceType] < _resourceCost)
-            return;
+        if (_resources < _resourceCost) return;
 
-        _resources[_resourceType] -= _resourceCost;
-        OnResourceChanged?.Invoke();
+        _resources -= _resourceCost;
+        ResourceChanged?.Invoke();
 
         Bot newBot = _botFactory.CreateBot(transform);
         _bots.Add(newBot);
@@ -109,14 +95,15 @@ public class Base : MonoBehaviour
 
     private void TrySendBot()
     {
-        if(_resourceCollectedForNewBase >= _resourcesRequired && FlagInstance != null)
+        if(_resources >= _resourcesRequired && FlagInstance != null)
         {
-            foreach (var bot in _bots)
+            foreach (Bot bot in _bots)
             {
                 if (!bot.IsBusy)
                 {
                     bot.SetFlagTarget(FlagInstance.transform);
-                    _resourceCollectedForNewBase = 0;
+                    _resources -= _resourcesRequired;
+                    ResourceChanged?.Invoke();
                     FlagInstance = null;
                     return;
                 }

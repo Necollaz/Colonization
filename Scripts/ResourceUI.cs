@@ -8,12 +8,12 @@ public class ResourceUI : MonoBehaviour
 
     private void OnEnable()
     {
-        _base.OnResourceChanged += UpdateText;
+        _base.ResourceChanged += UpdateText;
     }
 
     private void OnDisable()
     {
-        _base.OnResourceChanged -= UpdateText;
+        _base.ResourceChanged -= UpdateText;
     }
 
     private void Start()
@@ -23,13 +23,8 @@ public class ResourceUI : MonoBehaviour
 
     private void UpdateText()
     {
-        var resources = _base.GetResources();
+        int resources = _base.GetResources();
 
-        _text.text = "Ресурсы:\n";
-
-        foreach (var resource in resources)
-        {
-            _text.text += $"{resource.Key.ResourceName}: {resource.Value}\n";
-        }
+        _text.text = $"Ресурсы: {resources}\n";
     }
 }

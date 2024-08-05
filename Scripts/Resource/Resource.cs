@@ -2,16 +2,12 @@ using UnityEngine;
 
 public class Resource : MonoBehaviour 
 {
-    [SerializeField] private ResourceType _resourceType;
     [SerializeField] private int _amount;
-
-    public ResourceType GetResourceType() => _resourceType;
 
     public int GetAmount() => _amount;
 
-    public void Set(ResourceType resourceType)
+    public void Set(Resource resource)
     {
-        _resourceType = resourceType;
-        gameObject.SetActive(true);
+        resource.gameObject.SetActive(true);
     }
 }

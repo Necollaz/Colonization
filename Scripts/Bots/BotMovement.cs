@@ -8,7 +8,7 @@ public class BotMovement : MonoBehaviour
     private Transform _target;
     private bool _canMove;
 
-    public event Action OnReachTarget;
+    public event Action TargetReached;
 
     private void Update()
     {
@@ -30,7 +30,7 @@ public class BotMovement : MonoBehaviour
         if(Vector3.Distance(transform.position, _target.position) < 0.1f)
         {
             Stop();
-            OnReachTarget?.Invoke();
+            TargetReached?.Invoke();
         }
     }
 

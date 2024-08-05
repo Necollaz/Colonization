@@ -24,14 +24,11 @@ public class ResourceSpawner : MonoBehaviour
         }
     }
 
-    private Resource Create()
+    private void Create()
     {
-        ResourceType resourceType = _pool.GetRandomResourceType();
-        Resource resource = _pool.Get(resourceType);
-
+        Resource resource = _pool.Get();
         resource.transform.position = GetRandomPosition();
         resource.transform.rotation = GetRandomRotation();
-        return resource;
     }
 
     private Vector3 GetRandomPosition()
