@@ -10,15 +10,9 @@ public class ResourceUI : MonoBehaviour
 
     public void AddBase(Base resourceBase)
     {
-        string newLine = $"{resourceBase.name}: {resourceBase.Resources}\n";
-        _resourceText.text += newLine;
-        resourceBase.ResourceChanged += (amount) => UpdateResourceText();
-    }
-
-    public void AddBaseToList(Base resourceBase)
-    {
         _allResourceBases.Add(resourceBase);
-        AddBase(resourceBase);
+        resourceBase.ResourceChanged += (amount) => UpdateResourceText();
+        UpdateResourceText();
     }
 
     private void UpdateResourceText()
@@ -27,9 +21,13 @@ public class ResourceUI : MonoBehaviour
 
         foreach (var resourceBase in _allResourceBases)
         {
-            string newLine = $"{resourceBase.name}: {resourceBase.Resources}\n";
+            string newLine = GenerateResourceText(resourceBase);
             _resourceText.text += newLine;
         }
     }
 
+    private string GenerateResourceText(Base resourceBase)
+    {
+        return $"{resourceBase.name}: Количество ресурсов - {resourceBase.Resources} шт.\n";
+    }
 }

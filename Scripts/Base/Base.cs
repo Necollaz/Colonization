@@ -41,7 +41,7 @@ public class Base : MonoBehaviour
 
     public void RegisterBaseInUI()
     {
-        _resourceUI?.AddBaseToList(this);
+        _resourceUI?.AddBase(this);
     }
 
     public void RegisterBot(Bot bot)
