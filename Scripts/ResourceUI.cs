@@ -1,30 +1,35 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
 public class ResourceUI : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI _text;
-    [SerializeField] private Base _base;
+    [SerializeField] private TextMeshProUGUI _resourceText;
 
-    private void OnEnable()
+    private List<Base> _allResourceBases = new List<Base>();
+
+    public void AddBase(Base resourceBase)
     {
-        _base.ResourceChanged += UpdateText;
+        string newLine = $"{resourceBase.name}: {resourceBase.Resources}\n";
+        _resourceText.text += newLine;
+        resourceBase.ResourceChanged += (amount) => UpdateResourceText();
     }
 
-    private void OnDisable()
+    public void AddBaseToList(Base resourceBase)
     {
-        _base.ResourceChanged -= UpdateText;
+        _allResourceBases.Add(resourceBase);
+        AddBase(resourceBase);
     }
 
-    private void Start()
+    private void UpdateResourceText()
     {
-        UpdateText();
+        _resourceText.text = string.Empty;
+
+        foreach (var resourceBase in _allResourceBases)
+        {
+            string newLine = $"{resourceBase.name}: {resourceBase.Resources}\n";
+            _resourceText.text += newLine;
+        }
     }
 
-    private void UpdateText()
-    {
-        int resources = _base.GetResources();
-
-        _text.text = $"Ресурсы: {resources}\n";
-    }
 }

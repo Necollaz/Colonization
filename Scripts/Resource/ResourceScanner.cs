@@ -9,12 +9,13 @@ public class ResourceScanner : MonoBehaviour
     [SerializeField] private float _scanRadius;
     [SerializeField] private float _delay;
 
-    public ParticleSystem ParticleEffect;
+    private ResourceReservation _resourceReservation;
 
     public event Action<Resource> ResourceFound;
 
     private void Start()
     {
+        _resourceReservation = new ResourceReservation();
         StartCoroutine(Scan());
     }
 
@@ -38,7 +39,7 @@ public class ResourceScanner : MonoBehaviour
 
             foreach (Collider hit in hits)
             {
-                if(hit.TryGetComponent(out Resource resource))
+                if(hit.TryGetComponent(out Resource resource) && !_resourceReservation.IsReserved(resource))
                 {
                     ResourceFound?.Invoke(resource);
                     _particleEffect.Play();
